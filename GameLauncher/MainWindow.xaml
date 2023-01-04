@@ -9,8 +9,11 @@
         ContentRendered="Window_ContentRendered"
         Title="Launcher" Height="576" Width="1080">
     <Grid>
-        <Image Stretch="UniformToFill" Source="images/LauncherBackground.png"/>
+        <Image Stretch="UniformToFill" Source="/valheim.png" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
         <TextBlock Name="VersionText" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontSize="20" Foreground="White" Margin="0, 0, 5, 0"/>
-        <Button Name="PlayButton" Content="Checking For Updates" Click="PlayButton_Click" Height="60" FontSize="28" FontWeight="Bold" Foreground="#DDFFFFFF" Margin="0, 0, 0, 15" VerticalAlignment="Bottom" HorizontalAlignment="Center" MinWidth="150" Background="#FFFF9700" Padding="10,1,10,1"/>
+        <Button Name="PlayButton" Content="Procurando Atualizações" Click="PlayButton_Click" Height="40" FontSize="20" FontWeight="Bold" Foreground="#DDFFFFFF" Margin="0,418,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" MinWidth="150" Background="#FF061417" Padding="10,1,10,1"/>
+        <ProgressBar x:Name="DownloadProgressBar" HorizontalAlignment="Center" Height="20" Margin="0,336,0,0" VerticalAlignment="Top" Width="448" Background="#FF061417" BorderBrush="#FF0F3045" Foreground="#FFE3522E"/>
+        <Label x:Name="TBLabel" Content="" HorizontalAlignment="Center" VerticalAlignment="Top" Width="447" Foreground="#FFE3522E" FontWeight="Bold" Height="40" Margin="0,356,0,0" FontSize="11" Padding="0,0,0,0" UseLayoutRounding="False" RenderTransformOrigin="0.498,0.176"/>
+        <Label x:Name="TBPercentual" Content="" HorizontalAlignment="Left" Margin="769,336,0,0" VerticalAlignment="Top" Width="42" Foreground="#FFE3522E" FontWeight="Bold" Height="20" Padding="0,0,0,0"/>
     </Grid>
 </Window>

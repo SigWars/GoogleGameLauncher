@@ -10,11 +10,13 @@
   <ItemGroup>
     <None Remove="images\Icon.ico" />
     <None Remove="images\LauncherBackground.png" />
+    <None Remove="valheim.png" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="images\Icon.ico" />
     <Resource Include="images\LauncherBackground.png" />
+    <Resource Include="valheim.png" />
   </ItemGroup>
 
 </Project>

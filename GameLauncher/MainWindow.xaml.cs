@@ -13,7 +13,8 @@ namespace GameLauncher
         ready,
         failed,
         downloadingGame,
-        downloadingUpdate
+        downloadingUpdate,
+        cancelado
     }
 
     /// <summary>
@@ -21,10 +22,17 @@ namespace GameLauncher
     /// </summary>
     public partial class MainWindow : Window
     {
+        private bool debugmode = false;
+        
         private string rootPath;
         private string versionFile;
+        private string bepInZip; 
+        private string gameDir;
         private string gameZip;
         private string gameExe;
+        private string bepInDir;
+        WebClient webClient;
+        WebClient VersionClient;
 
         private LauncherStatus _status;
         internal LauncherStatus Status
@@ -36,16 +44,19 @@ namespace GameLauncher
                 switch (_status)
                 {
                     case LauncherStatus.ready:
-                        PlayButton.Content = "Play";
+                        PlayButton.Content = "Jogar";
                         break;
                     case LauncherStatus.failed:
-                        PlayButton.Content = "Update Failed - Retry";
+                        PlayButton.Content = "Tentar Novamente";
                         break;
                     case LauncherStatus.downloadingGame:
-                        PlayButton.Content = "Downloading Game";
+                        PlayButton.Content = "Baixando Jogo - Cancelar";
                         break;
                     case LauncherStatus.downloadingUpdate:
-                        PlayButton.Content = "Downloading Update";
+                        PlayButton.Content = "Baixando Atualização - Cancelar";
+                        break;
+                    case LauncherStatus.cancelado:
+                        PlayButton.Content = "Iniciar Atualização";
                         break;
                     default:
                         break;
@@ -59,21 +70,33 @@ namespace GameLauncher
 
             rootPath = Directory.GetCurrentDirectory();
             versionFile = Path.Combine(rootPath, "Version.txt");
-            gameZip = Path.Combine(rootPath, "Build.zip");
-            gameExe = Path.Combine(rootPath, "Build", "Pirate Game.exe");
+            
+            bepInZip = Path.Combine(rootPath, "ValheimMMO", "BepInEx.zip");
+            bepInDir = Path.Combine(rootPath, "ValheimMMO", "BepInEx");
+
+            gameZip = Path.Combine(rootPath, "ValheimMMO.zip");
+            gameExe = Path.Combine(rootPath, "ValheimMMO", "valheim.exe");
+            gameDir = Path.Combine(rootPath, "ValheimMMO");
+
+
+
         }
 
         private void CheckForUpdates()
         {
+            ClearAndHideLAbels();
+
             if (File.Exists(versionFile))
             {
                 Version localVersion = new Version(File.ReadAllText(versionFile));
                 VersionText.Text = localVersion.ToString();
+                VersionClient = new WebClient();
 
                 try
                 {
-                    WebClient webClient = new WebClient();
-                    Version onlineVersion = new Version(webClient.DownloadString("https://drive.google.com/uc?export=download&id=1R3GT_VINzmNoXKtvnvuJw6C86-k3Jr5s"));
+                    
+                    // Link para Version.txt
+                    Version onlineVersion = new Version(VersionClient.DownloadString("https://onedrive.live.com/download?cid=C8B7A698B7D995F7&resid=C8B7A698B7D995F7%21139&authkey=AEFs9T-Fhrst4DM"));
 
                     if (onlineVersion.IsDifferentThan(localVersion))
                     {
@@ -82,16 +105,22 @@ namespace GameLauncher
                     else
                     {
                         Status = LauncherStatus.ready;
+                        ClearAndHideLAbels();
+
                     }
                 }
                 catch (Exception ex)
                 {
                     Status = LauncherStatus.failed;
-                    MessageBox.Show($"Error checking for game updates: {ex}");
+                    TBLabel.Content = "Erro ao procurar por atualizações: " + ex.Message;
+                    
+                    if (debugmode)
+                        MessageBox.Show($"ERRO: {ex}");
                 }
             }
             else
             {
+                DownloadProgressBar.Visibility = Visibility.Visible;
                 InstallGameFiles(false, Version.zero);
             }
         }
@@ -100,45 +129,162 @@ namespace GameLauncher
         {
             try
             {
-                WebClient webClient = new WebClient();
+                webClient = new WebClient();
+                DownloadProgressBar.Visibility = Visibility.Visible;
+
+                // Remove todos os Handles
+                webClient.DownloadProgressChanged -= new DownloadProgressChangedEventHandler(DownloadProgressCallback);
+                webClient.DownloadFileCompleted -= new AsyncCompletedEventHandler(DownloadUpdateCompletedCallback);
+
+                // Handle Universal
+                webClient.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgressCallback);
+
                 if (_isUpdate)
                 {
+                    // Baixa Atualização
                     Status = LauncherStatus.downloadingUpdate;
+                    webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadUpdateCompletedCallback);
+                    webClient.DownloadFileAsync(new Uri("https://onedrive.live.com/download?cid=C8B7A698B7D995F7&resid=C8B7A698B7D995F7%21140&authkey=AAYlcZskhhRSSqI"), bepInZip, _onlineVersion);
                 }
                 else
                 {
+                    // Instala o jogo
                     Status = LauncherStatus.downloadingGame;
-                    _onlineVersion = new Version(webClient.DownloadString("https://drive.google.com/uc?export=download&id=1R3GT_VINzmNoXKtvnvuJw6C86-k3Jr5s"));
+                    VersionClient = new WebClient();
+                    _onlineVersion = new Version(VersionClient.DownloadString("https://onedrive.live.com/download?cid=C8B7A698B7D995F7&resid=C8B7A698B7D995F7%21139&authkey=AEFs9T-Fhrst4DM"));
+                    webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadGameCompletedCallback);
+                    webClient.DownloadFileAsync(new Uri("https://onedrive.live.com/download?cid=C8B7A698B7D995F7&resid=C8B7A698B7D995F7%21141&authkey=AA0K2M7jKv_MeRs"), gameZip, _onlineVersion);
                 }
-
-                webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadGameCompletedCallback);
-                webClient.DownloadFileAsync(new Uri("https://drive.google.com/uc?export=download&id=1SNA_3P5wVp4tZi5NKhiGAAD6q4ilbaaf"), gameZip, _onlineVersion);
             }
             catch (Exception ex)
             {
                 Status = LauncherStatus.failed;
-                MessageBox.Show($"Error installing game files: {ex}");
+                TBLabel.Content = "Erro ao instalar jogo: " + ex.Message;
+
+                if (debugmode)
+                    MessageBox.Show($"ERRO: {ex}");
             }
         }
 
+        private void DownloadProgressCallback(object sender, DownloadProgressChangedEventArgs e)
+        {
+
+            if (Status == LauncherStatus.cancelado)
+            {
+                CancelAction();
+                return; 
+            }
+
+                string msg = String.Format("Baixando {0} MB de {1} MB Total", Math.Round(e.BytesReceived / 1024d / 1024d), Math.Round(e.TotalBytesToReceive / 1024d / 1024d));
+            DownloadProgressBar.Value = e.ProgressPercentage;
+            TBLabel.Content = msg;
+            TBPercentual.Content = String.Format("{0} %", e.ProgressPercentage);
+
+            if (e.ProgressPercentage >= 99)
+            {
+                TBLabel.Content = "Extraindo arquivos aguarde...";
+            }
+
+
+            // Debug.
+            /*
+                Console.WriteLine("{0}    Baixando {1} de {2} bytes. {3} % completados...",
+                (string)e.UserState,
+                e.BytesReceived,
+                e.TotalBytesToReceive,
+                e.ProgressPercentage);
+            */
+
+
+        }
+
+
+        // Download Game
         private void DownloadGameCompletedCallback(object sender, AsyncCompletedEventArgs e)
         {
             try
             {
-                string onlineVersion = ((Version)e.UserState).ToString();
-                ZipFile.ExtractToDirectory(gameZip, rootPath, true);
-                File.Delete(gameZip);
+                if (e.Cancelled)
+                {
+                    CancelAction();
+                    return;
+                }
+     
 
+                string onlineVersion = ((Version)e.UserState).ToString();
+                // Deleta pasta BepinEx antiga se existir.
+                if (Directory.Exists(gameDir))
+                {
+                    Directory.Delete(gameDir, true);
+                }
+                // Extrai o arquivo Zip
+                TBLabel.Content = "Extraindo arquivos aguarde...";
+                ZipFile.ExtractToDirectory(gameZip, rootPath, true);
+                // Deleta aqueivo zip baixado
+                File.Delete(gameZip);
+                // Grava nova Versão
                 File.WriteAllText(versionFile, onlineVersion);
 
                 VersionText.Text = onlineVersion;
                 Status = LauncherStatus.ready;
+                ClearAndHideLAbels();
             }
             catch (Exception ex)
             {
                 Status = LauncherStatus.failed;
-                MessageBox.Show($"Error finishing download: {ex}");
+                TBLabel.Content = "Erro ao terminar o download: " + ex.Message;
+
+                if (debugmode)
+                    MessageBox.Show($"ERRO: {ex}");
             }
+        } 
+        
+        // Download Update Bepin
+        private void DownloadUpdateCompletedCallback(object sender, AsyncCompletedEventArgs e)
+        {
+            try
+            {
+                if (e.Cancelled)
+                {
+                    CancelAction();
+                    return;
+                }
+
+                string onlineVersion = ((Version)e.UserState).ToString();
+                // Deleta pasta BepinEx antiga se existir
+                if (Directory.Exists(bepInDir))
+                {
+                    Directory.Delete(bepInDir,true);
+                }
+                // Extrai o arquivo Zip
+                TBLabel.Content = "Extraindo arquivos aguarde...";
+                ZipFile.ExtractToDirectory(bepInZip, gameDir, true);
+                // Deleta aqueivo zip baixado
+                File.Delete(bepInZip);
+                //Grava nova Versão
+                File.WriteAllText(versionFile, onlineVersion);
+
+                VersionText.Text = onlineVersion;
+                Status = LauncherStatus.ready;
+                ClearAndHideLAbels();
+            }
+            catch (Exception ex)
+            {
+                Status = LauncherStatus.failed;
+                TBLabel.Content = "Erro ao terminar o download: " + ex.Message;
+
+                if (debugmode)
+                    MessageBox.Show($"ERRO: {ex}");
+            }
+        }
+
+        private void ClearAndHideLAbels()
+        {
+            TBLabel.Content = "";
+            TBPercentual.Content = "";
+
+            DownloadProgressBar.Visibility = Visibility.Hidden;
+
         }
 
         private void Window_ContentRendered(object sender, EventArgs e)
@@ -148,10 +294,12 @@ namespace GameLauncher
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
+            TBLabel.Content = "";
+            
             if (File.Exists(gameExe) && Status == LauncherStatus.ready)
             {
                 ProcessStartInfo startInfo = new ProcessStartInfo(gameExe);
-                startInfo.WorkingDirectory = Path.Combine(rootPath, "Build");
+                startInfo.WorkingDirectory = Path.Combine(rootPath, "ValheimMMO");
                 Process.Start(startInfo);
 
                 Close();
@@ -160,7 +308,39 @@ namespace GameLauncher
             {
                 CheckForUpdates();
             }
+            else if (Status == LauncherStatus.downloadingGame)
+            {
+                Status = LauncherStatus.cancelado;
+            }
+            else if (Status == LauncherStatus.downloadingUpdate)
+            {
+                Status = LauncherStatus.cancelado;
+            }
+            else if (Status == LauncherStatus.cancelado)
+            {
+                CheckForUpdates();
+            }
         }
+
+        public virtual void CancelAction()
+        {
+            if (this.webClient != null)
+            {
+                webClient.CancelAsync();
+                webClient.Dispose();
+            }
+
+            if (this.VersionClient != null)
+            {
+                VersionClient.CancelAsync();
+                VersionClient.Dispose();
+            }
+
+            ClearAndHideLAbels();
+           
+
+        }
+
     }
 
     struct Version
