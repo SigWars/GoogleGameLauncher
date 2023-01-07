@@ -5,15 +5,104 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GameLauncher"
         mc:Ignorable="d"
-        WindowStartupLocation="CenterScreen"
         ContentRendered="Window_ContentRendered"
-        Title="Launcher" Height="576" Width="1080">
-    <Grid>
-        <Image Stretch="UniformToFill" Source="/valheim.png" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
-        <TextBlock Name="VersionText" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontSize="20" Foreground="White" Margin="0, 0, 5, 0"/>
-        <Button Name="PlayButton" Content="Procurando Atualizações" Click="PlayButton_Click" Height="40" FontSize="20" FontWeight="Bold" Foreground="#DDFFFFFF" Margin="0,418,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" MinWidth="150" Background="#FF061417" Padding="10,1,10,1"/>
-        <ProgressBar x:Name="DownloadProgressBar" HorizontalAlignment="Center" Height="20" Margin="0,336,0,0" VerticalAlignment="Top" Width="448" Background="#FF061417" BorderBrush="#FF0F3045" Foreground="#FFE3522E"/>
-        <Label x:Name="TBLabel" Content="" HorizontalAlignment="Center" VerticalAlignment="Top" Width="447" Foreground="#FFE3522E" FontWeight="Bold" Height="40" Margin="0,356,0,0" FontSize="11" Padding="0,0,0,0" UseLayoutRounding="False" RenderTransformOrigin="0.498,0.176"/>
-        <Label x:Name="TBPercentual" Content="" HorizontalAlignment="Left" Margin="769,336,0,0" VerticalAlignment="Top" Width="42" Foreground="#FFE3522E" FontWeight="Bold" Height="20" Padding="0,0,0,0"/>
-    </Grid>
+        Title="Valheim Launcher" 
+        Height="833" 
+        Width="526"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        WindowStartupLocation="CenterScreen" Background="Transparent">
+    <Window.Resources>
+        <Style x:Key="FocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="2" StrokeDashArray="1 2" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" SnapsToDevicePixels="true" StrokeThickness="1"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <SolidColorBrush x:Key="Button.Static.Background" Color="#FFDDDDDD"/>
+        <SolidColorBrush x:Key="Button.Static.Border" Color="#FF707070"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Background" Color="#FFDC322F"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Border" Color="#FF3C7FB1"/>
+        <SolidColorBrush x:Key="Button.Pressed.Background" Color="#FFC4E5F6"/>
+        <SolidColorBrush x:Key="Button.Pressed.Border" Color="#FF2C628B"/>
+        <SolidColorBrush x:Key="Button.Disabled.Background" Color="#FFF4F4F4"/>
+        <SolidColorBrush x:Key="Button.Disabled.Border" Color="#FFADB2B5"/>
+        <SolidColorBrush x:Key="Button.Disabled.Foreground" Color="#FF838383"/>
+        <Style x:Key="PowerButton" TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+            <Setter Property="Background" Value="{StaticResource Button.Static.Background}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Button.Static.Border}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="true">
+                            <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDefaulted" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.MouseOver.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.MouseOver.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Pressed.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Pressed.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Disabled.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Disabled.Border}"/>
+                                <Setter Property="TextElement.Foreground" TargetName="contentPresenter" Value="{StaticResource Button.Disabled.Foreground}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Border HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#FF061417" BorderThickness="6" CornerRadius="0">
+        <Grid>
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="Red" Offset="0.0"/>
+                    <GradientStop Color="Green" Offset="0.5"/>
+                    <GradientStop Color="Blue" Offset="1.0"/>
+                </LinearGradientBrush>
+            </Grid.Background>
+
+            <Image Stretch="UniformToFill" Source="/valheim.png" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                <Image.OpacityMask>
+                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                        <GradientStop Color="Black"/>
+                        <GradientStop Color="White" Offset="1"/>
+                    </LinearGradientBrush>
+                </Image.OpacityMask>
+            </Image>
+
+            <TextBlock Name="VersionText" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontSize="20" Foreground="White" Margin="0, 0, 5, 0"/>
+            <Button Name="PlayButton" Content="Procurando Atualizações" Click="PlayButton_Click" Height="40" FontSize="20" FontWeight="Bold" Foreground="#DDFFFFFF" Margin="0,502,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" MinWidth="150" Background="#FF061417" Padding="10,1,10,1"/>
+            <ProgressBar x:Name="DownloadProgressBar" HorizontalAlignment="Center" Height="32" VerticalAlignment="Top" Width="392" Background="#FF061417" BorderBrush="#FF0F3045" Foreground="#FFE3522E" Margin="0,409,0,0"/>
+            <Label x:Name="TBLabel" Content="" HorizontalAlignment="Center" HorizontalContentAlignment="Center"  VerticalAlignment="Top" Width="392" Foreground="White" FontWeight="Bold" Height="31" FontSize="11" Padding="0,0,0,0" UseLayoutRounding="False" RenderTransformOrigin="0.498,0.176" Margin="0,449,0,0"/>
+            <Label x:Name="TBPercentual" Content="" HorizontalAlignment="Center" HorizontalContentAlignment="Center"  Margin="0,416,0,0" VerticalAlignment="Top" Width="42" Foreground="White" FontWeight="Bold" Height="20" Padding="0,0,0,0"/>
+            <Image HorizontalAlignment="Center" Margin="5,572,0,0" VerticalAlignment="Bottom" Source="/logo.png" Height="205" Width="506">
+                <Image.Effect>
+                    <DropShadowEffect/>
+                </Image.Effect>
+            </Image>
+            <Button Style="{DynamicResource PowerButton}" Content="" HorizontalAlignment="Right" Height="30" Margin="484,1,0,0" VerticalAlignment="Top" Width="30" Click="Button_Click" Foreground="{x:Null}" BorderBrush="{x:Null}">
+                <Button.Background>
+                    <ImageBrush ImageSource="powerbtn.png" TileMode="None"/>
+                </Button.Background>
+            </Button>
+        </Grid>
+    </Border>
 </Window>
