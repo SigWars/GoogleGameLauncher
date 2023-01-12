@@ -33,6 +33,12 @@ namespace GameLauncher
         private string gameZip;
         private string gameExe;
         private string bepInDir;
+        private string linksPath;
+        private string versionlink;
+        private string updatelink;
+        private string clientlink;
+        
+
         WebClient webClient;
         WebClient VersionClient;
 
@@ -66,11 +72,33 @@ namespace GameLauncher
             }
         }
 
+        public void ReadLinks()
+        {
+            if (File.Exists(linksPath))
+            {
+
+                string text = File.ReadAllText(linksPath);
+                string[] links = text.Split(Environment.NewLine);
+
+                versionlink = links[0];
+                updatelink = links[1];
+                clientlink = links[2];
+
+                /* foreach (string link in links)
+                    {
+                        Console.WriteLine(link);
+                }
+                */
+              
+            }
+        }
+
         public MainWindow()
         {
             InitializeComponent();
 
             rootPath = Directory.GetCurrentDirectory();
+            linksPath = Path.Combine(rootPath, "links.txt");
             versionFile = Path.Combine(rootPath, "Version.txt");
             
             bepInZip = Path.Combine(rootPath, "ValheimMMO", "BepInEx.zip");
@@ -79,10 +107,13 @@ namespace GameLauncher
             gameZip = Path.Combine(rootPath, "ValheimMMO.zip");
             gameExe = Path.Combine(rootPath, "ValheimMMO", "valheim.exe");
             gameDir = Path.Combine(rootPath, "ValheimMMO");
+            
             DownloadProgressBar.Visibility = Visibility.Hidden;
 
             // Mouse Handle para arrastar
             MouseDown += Window_MouseDown;
+
+            ReadLinks();
 
         }
 
@@ -96,6 +127,7 @@ namespace GameLauncher
         private void CheckForUpdates()
         {
             ClearAndHideLAbels();
+           
 
             if (File.Exists(versionFile))
             {
@@ -107,7 +139,7 @@ namespace GameLauncher
                 {
                     
                     // Link para Version.txt
-                    Version onlineVersion = new Version(VersionClient.DownloadString("https://onedrive.live.com/download?cid=C8B7A698B7D995F7&resid=C8B7A698B7D995F7%21139&authkey=AEFs9T-Fhrst4DM"));
+                    Version onlineVersion = new Version(VersionClient.DownloadString(versionlink));
 
                     if (onlineVersion.IsDifferentThan(localVersion))
                     {
@@ -155,16 +187,16 @@ namespace GameLauncher
                     // Baixa Atualização
                     Status = LauncherStatus.downloadingUpdate;
                     webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadUpdateCompletedCallback);
-                    webClient.DownloadFileAsync(new Uri("https://onedrive.live.com/download?cid=C8B7A698B7D995F7&resid=C8B7A698B7D995F7%21143&authkey=ADZIBSqTjZrUvJI"), bepInZip, _onlineVersion);
+                    webClient.DownloadFileAsync(new Uri(updatelink), bepInZip, _onlineVersion);
                 }
                 else
                 {
                     // Instala o jogo
                     Status = LauncherStatus.downloadingGame;
                     VersionClient = new WebClient();
-                    _onlineVersion = new Version(VersionClient.DownloadString("https://onedrive.live.com/download?cid=C8B7A698B7D995F7&resid=C8B7A698B7D995F7%21139&authkey=AEFs9T-Fhrst4DM"));
+                    _onlineVersion = new Version(VersionClient.DownloadString(versionlink));
                     webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadGameCompletedCallback);
-                    webClient.DownloadFileAsync(new Uri("https://onedrive.live.com/download?cid=C8B7A698B7D995F7&resid=C8B7A698B7D995F7%21144&authkey=AB6Qqr5-5LiEKow"), gameZip, _onlineVersion);
+                    webClient.DownloadFileAsync(new Uri(clientlink), gameZip, _onlineVersion);
                 }
             }
             catch (Exception ex)
